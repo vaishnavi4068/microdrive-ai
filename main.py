@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Security
+from fastapi import FastAPI, HTTPException, Security, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import List, Optional
 import os
@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from genai_utils import generate_post_caption, summarize_campaign
 from embedding_utils import get_top_hashtags
 from fastapi.security.api_key import APIKeyHeader
+from google.cloud import vision
+import io
 
 # Load environment variables from .env
 load_dotenv()
@@ -86,4 +88,33 @@ def summarize_campaign_ep(
         summary = summarize_campaign(req.campaign_brief)
         return {"summary": summary}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/get_hashtags_from_image")
+def get_hashtags_from_image(
+    image: UploadFile = File(...),
+    campaign_description: str = Form(...),
+    api_key: str = Security(verify_api_key)
+):
+    # Read image bytes
+    image_bytes = image.file.read()
+    client = vision.ImageAnnotatorClient()
+    vision_image = vision.Image(content=image_bytes)
+    # Use label detection to get tags
+    response = client.label_detection(image=vision_image)
+    labels = response.label_annotations
+    if not labels:
+        caption = "No description could be generated from the image."
+    else:
+        # Join top 5 labels as a description
+        caption = ", ".join([label.description for label in labels[:5]])
+    # Combine with campaign description
+    combined_desc = f"{caption}. {campaign_description}"
+    # Use existing hashtag recommendation logic
+    matched_hashtags = get_top_hashtags(combined_desc)
+    return {
+        "filename": image.filename,
+        "generated_caption": caption,
+        "campaign_description": campaign_description,
+        "matched_hashtags": matched_hashtags
+    } 
