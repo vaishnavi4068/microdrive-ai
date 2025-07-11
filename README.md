@@ -1,121 +1,113 @@
 # GenAI Influencer Content Utility
 
-## Overview
-This project provides a GenAI-powered utility to help influencers and campaign managers transform casual photo descriptions into engaging social media captions and campaign-relevant hashtags. It also summarizes campaign briefs and recommends hashtags using semantic similarity.
+A FastAPI-based tool for generating social media content, recommending hashtags, and summarizing campaigns using Google's Generative AI and Vision APIs.
 
 ## Features
-- Generate fun, friendly post captions and trendy hashtags from influencer-written descriptions and campaign summaries.
-- Summarize campaign briefs into short, influencer-friendly text.
-- Recommend relevant hashtags for any photo description using semantic embeddings.
-- Easily extensible for new hashtags, campaigns, or locations.
 
-## Setup Instructions
-1. **Clone the repository**
-2. **Create and activate a virtual environment:**  
-   python -m venv venv_new  
-   .\venv_new\Scripts\Activate.ps1  # On Windows
-3. **Install dependencies:**  
-   pip install -r requirements.txt
-4. **Store your API key in Google Cloud Secret Manager:**
-   - Go to [Secret Manager](https://console.cloud.google.com/security/secret-manager) in your GCP project.
-   - Create a secret named `MY_API_KEY` and paste your API key as the value.
-   - Authenticate your local environment with:
-     ```
-     gcloud auth application-default login
-     ```
-5. **Generate hashtag embeddings:**  
-   python generate_hashtag_embeddings.py
-6. **Run the API server:**  
-   uvicorn main:app --reload
+- **Post Generation**: Create engaging social media captions based on campaign descriptions
+- **Hashtag Recommendations**: Get relevant hashtags for your content
+- **Campaign Summaries**: Generate concise summaries of marketing campaigns
+- **Image Analysis**: Upload images to get caption suggestions and hashtag recommendations
+- **Secure API Key Management**: Uses Google Cloud Secret Manager for secure credential storage
 
-## Using Google Cloud Secret Manager
-- The API key for endpoint authentication is securely managed in Google Cloud Secret Manager.
-- The app fetches the key at runtime using the Secret Manager client library.
-- No sensitive keys are stored in code or local files.
+## Setup
+
+### Prerequisites
+- Python 3.8+
+- Google Cloud Project with APIs enabled
+- Google Cloud credentials configured
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <your-repo-url>
+cd genai-rebuild
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up Google Cloud authentication:
+```bash
+gcloud auth application-default login
+```
+
+4. Enable required APIs in Google Cloud Console:
+   - Generative Language API
+   - Vision API
+   - Secret Manager API
+
+5. Store your API key in Google Cloud Secret Manager:
+```bash
+echo -n "your-api-key-here" | gcloud secrets create genai-api-key --data-file=-
+```
+
+### Running the Application
+
+Start the FastAPI server:
+```bash
+uvicorn main:app --reload
+```
+
+The API will be available at `http://localhost:8000`
 
 ## API Endpoints
 
-### 1. `/generate_post`
-- **POST**
-- **Request Body:**
-  ```json
-  {
-    "photo_description": "string",
-    "campaign_summary": "string",
-    "location": "string"  // Optional, if enabled
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "post_caption": "string",
-    "hashtags": ["string", ...]
-  }
-  ```
+### Authentication
+All endpoints require an API key passed in the `X-API-Key` header.
 
-### 2. `/get_hashtags`
-- **POST**
-- **Request Body:**
-  ```json
-  {
-    "photo_description": "string",
-    "location": "string"  // Optional, if enabled
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "matched_hashtags": ["string", ...]
-  }
-  ```
+### Generate Post Caption
+- **POST** `/generate_post`
+- Generates social media captions based on campaign description and location
 
-### 3. `/summarize_campaign`
-- **POST**
-- **Request Body:**
-  ```json
-  {
-    "campaign_brief": "string"
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "summary": "string"
-  }
-  ```
+### Get Hashtag Recommendations
+- **POST** `/get_hashtags`
+- Recommends relevant hashtags based on campaign description
 
-### 4. `/get_hashtags_from_image`
-- **POST**
-- **Request:** multipart/form-data with an image file and a campaign description
-- **Response:**
-  ```json
-  {
-    "filename": "string",
-    "generated_caption": "string",
-    "campaign_description": "string",
-    "matched_hashtags": ["string", ...]
-  }
-  ```
+### Summarize Campaign
+- **POST** `/summarize_campaign`
+- Creates concise summaries of marketing campaigns
 
-## Regenerating Hashtag Embeddings
-- Edit the hashtag list in `generate_hashtag_embeddings.py` as needed.
-- Run:
-  ```sh
-  python generate_hashtag_embeddings.py
-  ```
-- This will update `hashtags.csv` with new embeddings.
+### Upload Image for Hashtags
+- **POST** `/upload_image_hashtags`
+- Upload an image to get caption suggestions and hashtag recommendations
 
-## Extensibility Notes
-- To add new hashtags, update the list in `generate_hashtag_embeddings.py` and rerun the script.
-- To support new input fields (e.g., location), update the request models and logic in `main.py` and `embedding_utils.py`.
-- For production, consider using managed services like Vertex AI Vector Search and Endpoints.
+## Usage Examples
 
-## Example Test Cases
-See the `test_cases.md` file for sample inputs and expected outputs.
+### Generate a post caption:
+```bash
+curl -X POST "http://localhost:8000/generate_post" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "campaign_description": "Summer sale for beachwear collection",
+    "location": "Miami, FL"
+  }'
+```
 
-## Troubleshooting
-- If you see authentication errors, make sure you have run:
-  ```
-  gcloud auth application-default login
-  ```
-  and are logged in with an account that has access to Secret Manager in your GCP project.
+### Get hashtag recommendations:
+```bash
+curl -X POST "http://localhost:8000/get_hashtags" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "campaign_description": "New fitness app launch"
+  }'
+```
+
+## Security
+
+- API keys are stored securely in Google Cloud Secret Manager
+- All endpoints require authentication
+- No sensitive data is logged or stored locally
+
+## Contributing
+
+Feel free to submit issues and enhancement requests!
+
+---
+
+*Last updated: July 11, 2025*
