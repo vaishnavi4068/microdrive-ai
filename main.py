@@ -8,6 +8,7 @@ from embedding_utils import get_top_hashtags
 from fastapi.security.api_key import APIKeyHeader
 from google.cloud import vision
 import io
+from secrets_utils import get_secret
 
 # Load environment variables from .env
 load_dotenv()
@@ -40,7 +41,8 @@ class SummarizeCampaignResponse(BaseModel):
 # --- Endpoints ---
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=True)
 
-API_KEY = os.getenv("MY_API_KEY")
+PROJECT_ID = "microdrive-dev"
+API_KEY = get_secret("MY_API_KEY", PROJECT_ID)
 print("Loaded API KEY:", API_KEY)
 
 def verify_api_key(api_key: str = Security(api_key_header)):
