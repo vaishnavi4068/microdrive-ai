@@ -11,29 +11,27 @@ This project provides a GenAI-powered utility to help influencers and campaign m
 
 ## Setup Instructions
 1. **Clone the repository**
-2. **Create and activate a virtual environment:**
-   ```sh
-   python -m venv venv_new
+2. **Create and activate a virtual environment:**  
+   python -m venv venv_new  
    .\venv_new\Scripts\Activate.ps1  # On Windows
-   ```
-3. **Install dependencies:**
-   ```sh
+3. **Install dependencies:**  
    pip install -r requirements.txt
-   ```
-4. **Set up your environment variables:**
-   - Create a `.env` file with your Google API key:
+4. **Store your API key in Google Cloud Secret Manager:**
+   - Go to [Secret Manager](https://console.cloud.google.com/security/secret-manager) in your GCP project.
+   - Create a secret named `MY_API_KEY` and paste your API key as the value.
+   - Authenticate your local environment with:
      ```
-     GOOGLE_API_KEY=your_google_api_key_here
-     MY_API_KEY=your_super_secret_api_key_here
+     gcloud auth application-default login
      ```
-5. **Generate hashtag embeddings:**
-   ```sh
+5. **Generate hashtag embeddings:**  
    python generate_hashtag_embeddings.py
-   ```
-6. **Run the API server:**
-   ```sh
+6. **Run the API server:**  
    uvicorn main:app --reload
-   ```
+
+## Using Google Cloud Secret Manager
+- The API key for endpoint authentication is securely managed in Google Cloud Secret Manager.
+- The app fetches the key at runtime using the Secret Manager client library.
+- No sensitive keys are stored in code or local files.
 
 ## API Endpoints
 
@@ -86,6 +84,19 @@ This project provides a GenAI-powered utility to help influencers and campaign m
   }
   ```
 
+### 4. `/get_hashtags_from_image`
+- **POST**
+- **Request:** multipart/form-data with an image file and a campaign description
+- **Response:**
+  ```json
+  {
+    "filename": "string",
+    "generated_caption": "string",
+    "campaign_description": "string",
+    "matched_hashtags": ["string", ...]
+  }
+  ```
+
 ## Regenerating Hashtag Embeddings
 - Edit the hashtag list in `generate_hashtag_embeddings.py` as needed.
 - Run:
@@ -100,16 +111,11 @@ This project provides a GenAI-powered utility to help influencers and campaign m
 - For production, consider using managed services like Vertex AI Vector Search and Endpoints.
 
 ## Example Test Cases
-See the `test_cases.md` file for sample inputs and expected outputs. 
+See the `test_cases.md` file for sample inputs and expected outputs.
 
-from fastapi import Security
-from fastapi.security.api_key import APIKeyHeader 
-
-api_key_header = APIKeyHeader(name="x-api-key", auto_error=True)
-
-def verify_api_key(api_key: str = Security(api_key_header)):
-    if api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
-
-@app.post("/generate_post", response_model=GeneratePostResponse, dependencies=[Depends(verify_api_key)])
-# ...etc...
+## Troubleshooting
+- If you see authentication errors, make sure you have run:
+  ```
+  gcloud auth application-default login
+  ```
+  and are logged in with an account that has access to Secret Manager in your GCP project.
