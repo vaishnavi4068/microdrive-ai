@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 import numpy as np
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -36,7 +37,8 @@ def load_hashtag_embeddings():
             if len(row) != 2:
                 continue
             hashtags.append(row[0])
-            emb = np.array(eval(row[1]))
+            # Use json.loads() instead of eval() for security
+            emb = np.array(json.loads(row[1]))
             embeddings.append(emb)
     return hashtags, np.stack(embeddings)
 
